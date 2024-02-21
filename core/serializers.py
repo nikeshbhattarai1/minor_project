@@ -57,7 +57,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
         print('here')
         user_id = self.context.get('user_id')
         validated_data['user_id'] = user_id
-        print(validated_data)
+        # print(validated_data)
         Expense_instance=Expense.objects.create(**validated_data)
         print(Expense_instance)
         return Expense_instance
@@ -74,10 +74,10 @@ class AssetCategorySerializer(serializers.ModelSerializer):
 
 class AssetSerializer(serializers.ModelSerializer):
     user_id = user_id = serializers.IntegerField(read_only = True)
-    asset_category_id = serializers.IntegerField()
+    # asset_category_id = serializers.IntegerField()
     class Meta:
         model = Asset
-        fields = ['user_id','asset_note', 'asset_amount', 'asset_date', 'asset_category_id','id'] # ',
+        fields = ['id','user_id','asset_note', 'asset_amount', 'asset_date', 'asset_category'] # ',
 
     def create(self,validated_data):
         # print('here')
@@ -110,6 +110,10 @@ class LiabilitySerializer(serializers.ModelSerializer):
         user_id = self.context.get('user_id')
         validated_data['user_id'] = user_id
         # print(validated_data)
-        Liability_instance  =Asset.objects.create(**validated_data)
+        Liability_instance  =Liability.objects.create(**validated_data)
         print(Liability_instance )
         return Liability_instance 
+    
+
+################################################################################################################
+    

@@ -228,7 +228,6 @@ class LiabilityView(ListCreateAPIView):
         return Liability.objects.filter(user_id=self.request.user.id)
     
     def get_serializer_class(self):
-        # print("VIEW")
         return LiabilitySerializer
     
     def get_serializer_context(self):
@@ -305,15 +304,29 @@ class TotalLiabilityView(APIView):
 class BalanceView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # def get(self, request):
+    #     total_income = Income.objects.filter(user_id=self.request.user.id).aggregate(total_income=Sum('income_amount'))['total_income'] or 0
+    #     total_expense = Expense.objects.filter(user_id=self.request.user.id).aggregate(total_expense=Sum('expense_amount'))['total_expense'] or 0
+    #     return Response({"balance_amount":total_income-total_expense})
+
     def get(self, request):
         total_income = Income.objects.filter(user_id=self.request.user.id).aggregate(total_income=Sum('income_amount'))['total_income'] or 0
         total_expense = Expense.objects.filter(user_id=self.request.user.id).aggregate(total_expense=Sum('expense_amount'))['total_expense'] or 0
-        return Response({"balance_amount":total_income-total_expense})
-    
+        total_liability = Liability.objects.filter(user_id=self.request.user.id).aggregate(total_liability=Sum('liability_amount'))['total_liability'] or 0
+        total_asset = Asset.objects.filter(user_id=self.request.user.id).aggregate(total_asset=Sum('asset_amount'))['total_asset'] or 0
+        balance_amount = total_income - total_expense
+
+        return Response({
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "balance_amount": balance_amount,
+            "total_assets": total_asset,
+            "total_liabilities": total_liability,
+        })
 
 ############################################################################################################
     
-# class HistoryView(APIView, DeleteModelMixins):
+# class HistoryView(APIView):
 #     permission_classes = [IsAuthenticated]
 
     
@@ -330,67 +343,58 @@ class BalanceView(APIView):
 #                                          x.get('asset_date', datetime.min)))), reverse=True)
 #         return Response(combined_history_sorted)
 
-
-
-
+######################################################################################################################
 
 class HistoryView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request, entry_id=None):
         if entry_id is not None:
-            # If an entry_id is provided, treat it as a request for a specific history entry
             try:
-                income_entry = Income.objects.get(id=entry_id, user=request.user)
-                serializer = IncomeSerializer(income_entry)
-                return Response(serializer.data)
+                income_data = Income.objects.filter(id=entry_id, user=request.user).values('id', 'income_amount', 'income_note', 'income_date', 'income_category__category_name')
+                if income_data.exists():
+                    return Response(income_data.first())
+                else:
+                    raise Http404("Income entry not found")
             except Income.DoesNotExist:
                 try:
-                    expense_entry = Expense.objects.get(id=entry_id, user=request.user)
-                    serializer = ExpenseSerializer(expense_entry)
-                    return Response(serializer.data)
+                    expense_data = Expense.objects.get(id=entry_id, user=request.user).values('id', 'expense_amount', 'expense_note', 'expense_date', 'expense_category__category_name')
+                    if expense_data.exists():
+                        return Response(expense_data.first())
+                    else:
+                        raise Http404("Expense entry not found")
                 except Expense.DoesNotExist:
                     try:
-                        liability_entry = Liability.objects.get(id=entry_id, user=request.user)
-                        serializer = LiabilitySerializer(liability_entry)
-                        return Response(serializer.data)
+                        liability_data = Liability.objects.get(id=entry_id, user=request.user).values('id', 'liability_amount', 'liability_note', 'liability_date', 'liability_category__category_name')
+                        if liability_data.exists():
+                            return Response(liability_data.first())
+                        else:
+                            raise Http404("Liability entry not found")
                     except Liability.DoesNotExist:
                         try:
-                            asset_entry = Asset.objects.get(id=entry_id, user=request.user)
-                            serializer = AssetSerializer(asset_entry)
-                            return Response(serializer.data)
+                            asset_data = Asset.objects.get(id=entry_id, user=request.user).values('id', 'asset_amount', 'asset_note', 'asset_date', 'asset_category__category_name')
+                            if asset_data.exists():
+                                return Response(asset_data.first())
+                            else:
+                                raise Http404("Asset entry not found")
                         except Asset.DoesNotExist:
                             raise Http404("History entry not found")
-        
+
         else:
-            # If no entry_id is provided, return the entire financial history
-            income_history = Income.objects.filter(user=request.user)
-            expense_history = Expense.objects.filter(user=request.user)
-            liability_history = Liability.objects.filter(user=request.user)
-            asset_history = Asset.objects.filter(user=request.user)
+            income_history = Income.objects.filter(user=request.user).values('id', 'income_amount', 'income_note', 'income_date', 'income_category__category_name')
+            expense_history = Expense.objects.filter(user=request.user).values('id', 'expense_amount', 'expense_note', 'expense_date', 'expense_category__category_name')
+            liability_history = Liability.objects.filter(user=request.user).values('id', 'liability_amount', 'liability_note', 'liability_date', 'liability_category__category_name')
+            asset_history = Asset.objects.filter(user=request.user).values('id', 'asset_amount', 'asset_note', 'asset_date', 'asset_category__category_name')
 
             combined_history = list(income_history) + list(expense_history) + list(liability_history) + list(asset_history)
             
-            combined_history_serialized = []
-
-            for entry in combined_history:
-                if isinstance(entry, Income):
-                    serializer = IncomeSerializer(entry)
-                elif isinstance(entry, Expense):
-                    serializer = ExpenseSerializer(entry)
-                elif isinstance(entry, Liability):
-                    serializer = LiabilitySerializer(entry)
-                elif isinstance(entry, Asset):
-                    serializer = AssetSerializer(entry)
-
-                combined_history_serialized.append(serializer.data)
-
-            combined_history_sorted = sorted(combined_history_serialized, key=lambda x: x.get('income_date', 
-                                             x.get('expense_date', 
-                                             x.get('liability_date', 
-                                             x.get('asset_date', datetime.min)))), reverse=True)
+            combined_history_sorted = sorted(combined_history, key=lambda x: x.get('income_date', 
+                                            x.get('expense_date', 
+                                            x.get('liability_date', 
+                                            x.get('asset_date', datetime.min)))), reverse=True)
 
             return Response(combined_history_sorted)
+
 
     def delete(self, request, entry_id):
         try:
@@ -418,3 +422,7 @@ class HistoryView(APIView):
                             return Response({'detail': 'Asset entry deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
                     except Asset.DoesNotExist:
                         raise Http404("History entry not found")
+
+##################################################################################################################################
+
+
