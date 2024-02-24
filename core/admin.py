@@ -135,31 +135,29 @@ class UserAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.Target)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ['id','user', 'target_name', 'target_set_date', 'target_completion_date', 'target_status', 'added_amount_list']
+class TargetAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'target_name', 'target_set_date', 'target_completion_date', 'target_wallet_list']
     list_filter = ['user']
 
-    def added_amount_list(self, target):
-        url = reverse('admin:core_addedamount_changelist')+ '?' + urlencode({'target__id': str(target.id)})
-        return format_html('<a href = "{}">{}</a>', url, target.added_amount_list) #display with link 
+    def target_wallet_list(self, target):
+        url = reverse('admin:core_target_wallet_changelist') + '?' + urlencode({'target__id': str(target.id)})
+        return format_html('<a href="{}">{}</a>', url, target.targetwallet_count)  # Display with link
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
-        added_amount_list = Count('addedamount', distinct=True)
-    )
+            targetwallet_count=Count('target_wallets', distinct=True)
+        )
 
     def user(self, obj):
         return obj.user.username if obj.user else ''
 
-
 @admin.register(models.TargetWallet)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ['id','user', 'target', 'added_date', 'added_amount']
+class TargetWalletAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'target', 'added_date', 'total_amount']
     list_filter = ['target']
 
     def target(self, obj):
         return obj.target.target_name if obj.target else ''
-    
-    def user(self,obj):
-        return obj.target.user.username if obj.target.user else ''
 
+    def user(self, obj):
+        return obj.target.user.username if obj.target and obj.target.user else ''

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer, UserSerializer as BaseUserSerializer
-from .models import IncomeCategory, Income, Expense, Asset, Liability, ExpenseCategory, AssetCategory, LiabilityCategory
+from .models import IncomeCategory, Income, Expense, Asset, Liability, ExpenseCategory, AssetCategory, LiabilityCategory, Target, TargetWallet
 
 
 
@@ -116,4 +116,15 @@ class LiabilitySerializer(serializers.ModelSerializer):
     
 
 ################################################################################################################
-    
+
+class TargetWalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TargetWallet
+        fields = ['total_amount', 'added_date']
+
+class TargetSerializer(serializers.ModelSerializer):
+    target_wallet = TargetWalletSerializer()
+    class Meta:
+        model = Target
+        fields = ['id', 'target_name', 'target_set_date', 'target_completion_date', 'priority', 'amount_needed', 'target_wallet']
+

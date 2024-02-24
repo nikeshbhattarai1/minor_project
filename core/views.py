@@ -6,21 +6,27 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, DestroyAPIView
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum
 from django.db import transaction
+from django.db.models import F 
 from django.core.serializers import serialize
-
+from . import models
 from datetime import datetime
 
+from django.http import JsonResponse
+from django.contrib import messages
+
+
 from . models import Income, IncomeCategory, Expense, ExpenseCategory, Asset,\
-                    AssetCategory, Liability, LiabilityCategory
+                    AssetCategory, Liability, LiabilityCategory, TargetWallet
 from . serializers import IncomeCategorySerializer, IncomeSerializer,ExpenseSerializer,\
                             AssetSerializer, LiabilitySerializer, ExpenseCategorySerializer,\
-                            AssetCategorySerializer, LiabilityCategorySerializer
+                            AssetCategorySerializer, LiabilityCategorySerializer, TargetWalletSerializer
+
 
 ###########################################################################################################
 
@@ -47,7 +53,7 @@ class IncomeCategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 
 
-class IncomeView(ListCreateAPIView):
+class IncomeView(ListCreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -63,6 +69,11 @@ class IncomeView(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         print(request.data)
         return super().create(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 
@@ -101,29 +112,27 @@ class ExpenseCategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 
 
-class ExpenseView(ListCreateAPIView):
+class ExpenseView(ListCreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Expense.objects.filter(user_id=self.request.user.id)
-    
+
     def get_serializer_class(self):
-        print("VIEW")
+        # print("VIEW")
         return ExpenseSerializer
-    
+
     def get_serializer_context(self):
-        return {'user_id':self.request.user.id}
-    
+        return {'user_id': self.request.user.id}
+
     def create(self, request, *args, **kwargs):
         print(request.data)
         return super().create(request, *args, **kwargs)
-
-    # def get_queryset(self):
-    #     return Expense.objects.filter(user_id=self.request.user.id)
     
-    # def get_serializer_class(self):
-    #     return ExpenseSerializer
-    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ExpenseDetailView(RetrieveUpdateDestroyAPIView):
@@ -161,29 +170,27 @@ class AssetCategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 
 
-class AssetView(ListCreateAPIView):
+class AssetView(ListCreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
          return Asset.objects.filter(user_id=self.request.user.id)
     
     def get_serializer_class(self):
-        # print("VIEW")
         return AssetSerializer
     
     def get_serializer_context(self):
-        return {'user_id':self.request.user.id}
+        return {'user_id': self.request.user.id}
     
     def create(self, request, *args, **kwargs):
         print(request.data)
         return super().create(request, *args, **kwargs)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # def get_queryset(self):
-    #     return Asset.objects.filter(user_id=self.request.user.id)
-    
-    # def get_serializer_class(self):
-    #     return AssetSerializer
 
 class AssetDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -220,7 +227,7 @@ class LiabilityCategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 
 
-class LiabilityView(ListCreateAPIView):
+class LiabilityView(ListCreateAPIView, DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
 
@@ -236,14 +243,11 @@ class LiabilityView(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         print(request.data)
         return super().create(request, *args, **kwargs)
-
-
-    # def get_queryset(self):
-    #     return Liability.objects.filter(user_id=self.request.user.id)
     
-    # def get_serializer_class(self):
-    #     return LiabilitySerializer
-    
+    def destroy(self, request, *args, **kwargs):    
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class LiabilityDetailView(RetrieveUpdateDestroyAPIView):
@@ -283,6 +287,7 @@ class TotalExpenseView(APIView):
             expense_notification = "Expense More than Threshold"
             
         return Response({"total_expense": total_expense, "expense_notification":expense_notification})
+    
 
 class TotalAssetView(APIView):
     permission_classes = [IsAuthenticated]
@@ -303,11 +308,6 @@ class TotalLiabilityView(APIView):
 
 class BalanceView(APIView):
     permission_classes = [IsAuthenticated]
-
-    # def get(self, request):
-    #     total_income = Income.objects.filter(user_id=self.request.user.id).aggregate(total_income=Sum('income_amount'))['total_income'] or 0
-    #     total_expense = Expense.objects.filter(user_id=self.request.user.id).aggregate(total_expense=Sum('expense_amount'))['total_expense'] or 0
-    #     return Response({"balance_amount":total_income-total_expense})
 
     def get(self, request):
         total_income = Income.objects.filter(user_id=self.request.user.id).aggregate(total_income=Sum('income_amount'))['total_income'] or 0
@@ -333,9 +333,9 @@ class BalanceView(APIView):
 
 #     def get(self, request):
 #         income_history = Income.objects.filter(user=request.user).values('id','income_amount', 'income_note', 'income_date',"income_category__category_name")
-#         expense_history = Expense.objects.filter(user=request.user).values('expense_amount', 'expense_note', 'expense_date','expense_category__category_name')
-#         liability_history = Liability.objects.filter(user=request.user).values('liability_amount', 'liability_note', 'liability_date','liability_category__category_name')
-#         asset_history = Asset.objects.filter(user=request.user).values('asset_amount', 'asset_note', 'asset_date','asset_category__category_name')
+#         expense_history = Expense.objects.filter(user=request.user).values('id','expense_amount', 'expense_note', 'expense_date','expense_category__category_name')
+#         liability_history = Liability.objects.filter(user=request.user).values('id','liability_amount', 'liability_note', 'liability_date','liability_category__category_name')
+#         asset_history = Asset.objects.filter(user=request.user).values('id','asset_amount', 'asset_note', 'asset_date','asset_category__category_name')
 #         combined_history = list(income_history) + list(expense_history) + list(liability_history) + list(asset_history)
 #         combined_history_sorted = sorted(combined_history, key=lambda x: x.get('income_date', 
 #                                          x.get('expense_date', 

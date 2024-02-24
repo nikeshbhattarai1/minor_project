@@ -1,5 +1,5 @@
 from django.urls import path
-
+from .views import DivideAmountView
 from . import views
 
 urlpatterns = [
@@ -32,4 +32,7 @@ urlpatterns = [
 
     path('history/', views.HistoryView.as_view()),
     path('history/<int:entry_id>/', views.HistoryView.as_view(), name='history-detail'),
+
+    # path('targetwallet/',views.TargetWalletView.as_view()),
+    # path('divideamount/<int:target_wallet_id>/', views.DivideAmountView.as_view(), name='divide_amount_by_priority'),
 ]
