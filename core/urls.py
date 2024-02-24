@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DivideAmountView
+# from .views import DivideAmountView
 from . import views
 
 urlpatterns = [
