@@ -89,31 +89,30 @@ class Liability(models.Model):
 #     target = models.ForeignKey(Target, on_delete = models.CASCADE)
 
 #########################################################################################################################
-
-class TargetWallet(models.Model):
-    added_date = models.DateTimeField()
-    total_amount = models.DecimalField(max_digits=14, decimal_places=2, validators=[MinValueValidator(1)])
-    # target = models.ForeignKey(Target, on_delete=models.CASCADE)
-
-    def add_amount(self, amount):
-        self.total_amount += amount
-        self.save()
+class Target(models.Model):
+    target_name = models.CharField(max_length = 255)
+    current_amount = models.FloatField()
+    target_amount = models.FloatField()
+    target_add_date = models.DateTimeField(auto_now = True)
+    target_deadline = models.DateTimeField(auto_now = False)
+    completed = 'COMP'
+    incomplete = 'INCP'
+    target_choices = [(completed, 'completed'),
+                      (incomplete, 'incomplete')]
+    target_status  = models.CharField(max_length =4, choices = target_choices, default = incomplete)
+    low = 'L'
+    medium = 'M'
+    high = 'H'
+    priority_choices = [(low, 'low'),
+                      (medium, 'medium'),
+                      (high, 'high')]
+    target_priority = models.CharField(max_length = 1, choices = priority_choices)
+    user = models.ForeignKey(User, on_delete = models.CASCADE)
 
     def __str__(self):
-        return f"TargetWallet - Total Amount: {self.total_amount}"
+        return f'{self.target_name}'
 
 
-class Target(models.Model):
-    PRIORITY_CHOICES = [
-        ('High', 'High'),
-        ('Medium', 'Medium'),
-        ('Low', 'Low'),
-    ]
-
-    target_name = models.CharField(max_length = 255)
-    target_set_date = models.DateField(auto_now=True)
-    target_completion_date = models.DateField(auto_now=False)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
-    amount_needed = models.DecimalField(max_digits=10, decimal_places=2)
-    target_wallet = models.ForeignKey(TargetWallet, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete = models.CASCADE)
+class TargetWallet(models.Model):
+    amount = models.FloatField()
+    user = models.OneToOneField(User, on_delete = models.CASCADE)

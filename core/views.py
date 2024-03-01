@@ -1,6 +1,7 @@
 # Create your views here.
 from decimal import Decimal
 from django.http import Http404
+from requests import request
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,22 +11,22 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate
 from django.shortcuts import render, get_object_or_404
+from django.contrib.messages import constants as messages_constants
 from django.db.models import Sum
 from django.db import transaction
-from django.db.models import F 
 from django.core.serializers import serialize
 from . import models
-from datetime import datetime
+from datetime import datetime, date
 
 from django.http import JsonResponse
 from django.contrib import messages
 
 
-from . models import Income, IncomeCategory, Expense, ExpenseCategory, Asset,\
-                    AssetCategory, Liability, LiabilityCategory, TargetWallet
+from . models import User, Income, IncomeCategory, Expense, ExpenseCategory, Asset,\
+                    AssetCategory, Liability, LiabilityCategory, Target, TargetWallet
 from . serializers import IncomeCategorySerializer, IncomeSerializer,ExpenseSerializer,\
                             AssetSerializer, LiabilitySerializer, ExpenseCategorySerializer,\
-                            AssetCategorySerializer, LiabilityCategorySerializer, TargetWalletSerializer
+                            AssetCategorySerializer, LiabilityCategorySerializer, TargetSerializer, TargetWalletSerializer
 
 
 ###########################################################################################################
@@ -425,4 +426,91 @@ class HistoryView(APIView):
 
 ##################################################################################################################################
 
+class TargetWalletCreateView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return TargetWallet.objects.filter(user_id=self.request.user.id)
+    
+    def get_serializer_class(self):
+        return TargetWalletSerializer
 
+
+
+class TargetWalletDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, index):
+        target_wallet = TargetWallet.objects.get(user_id=request.user.id)
+        if index == "update":
+            target_wallet.amount = request.data['amount']
+        elif index == "add":
+            target_wallet.amount += request.data['amount']
+        target_wallet.save()
+        
+        user = User.objects.get(id=request.user.id)
+        self.function_start(user)
+
+        return Response({"detail":"success update"}, status=status.HTTP_201_CREATED)
+
+    def function_start(self, user):
+        target_wallet_queryset = TargetWallet.objects.get(user_id=user.id)
+        total_wallet = target_wallet_queryset.amount
+        targets = Target.objects.filter(user_id=user.id).filter(target_status='INCP').filter(target_deadline__gt=date.today())
+        
+        total_priority = 0
+        for target in targets:
+            if target.target_priority == "H":
+                total_priority += 0.5
+            elif target.target_priority == "M":
+                total_priority += 0.3
+            else:
+                total_priority += 0.2
+
+        for target in targets:
+            float_target_priority = 0
+            if target.target_priority == "H":
+                float_target_priority = 0.5
+            elif target.target_priority == "M":
+                float_target_priority = 0.3
+            else:
+                float_target_priority = 0.2
+            target_divided_amount = (total_wallet / total_priority) * float_target_priority
+
+            if target.target_amount > target_divided_amount:
+                target.current_amount = target_divided_amount
+                target.save()
+            
+            else:
+                target.current_amount = target.target_amount
+                target.target_status = "COMP"
+                target_wallet_queryset.amount -= target.target_amount
+                target.save()
+                target_wallet_queryset.save()
+                # Recursion
+                self.function_start(user)
+                break
+    
+
+
+class TargetListView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Target.objects.filter(user_id=self.request.user.id)
+    
+    def get_serializer_class(self):
+        return TargetSerializer
+
+
+
+class TargetDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return Target.objects.filter(user_id=self.request.user.id).filter(id=pk)
+    
+    def get_serializer_class(self):
+        return TargetSerializer
+    

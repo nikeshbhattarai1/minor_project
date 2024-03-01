@@ -116,15 +116,15 @@ class LiabilitySerializer(serializers.ModelSerializer):
     
 
 ################################################################################################################
-
 class TargetWalletSerializer(serializers.ModelSerializer):
+    user_id = user_id = serializers.IntegerField()
     class Meta:
         model = TargetWallet
-        fields = ['total_amount', 'added_date']
+        fields = ['id', 'amount', 'user_id']
+
 
 class TargetSerializer(serializers.ModelSerializer):
-    target_wallet = TargetWalletSerializer()
+    user_id = user_id = serializers.IntegerField()
     class Meta:
         model = Target
-        fields = ['id', 'target_name', 'target_set_date', 'target_completion_date', 'priority', 'amount_needed', 'target_wallet']
-
+        fields = ['id', 'target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority', 'user_id']

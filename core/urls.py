@@ -32,7 +32,7 @@ urlpatterns = [
 
     path('history/', views.HistoryView.as_view()),
     path('history/<int:entry_id>/', views.HistoryView.as_view(), name='history-detail'),
-
-    # path('targetwallet/',views.TargetWalletView.as_view()),
-    # path('divideamount/<int:target_wallet_id>/', views.DivideAmountView.as_view(), name='divide_amount_by_priority'),
+    
+    path('targets/', views.TargetListView.as_view()),
+    path('targets/<int:pk>', views.TargetDetailView.as_view()),
 ]

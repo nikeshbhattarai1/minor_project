@@ -134,30 +134,65 @@ class UserAdmin(admin.ModelAdmin):
         return obj.user.username if obj.user else ''
 
 
+# @admin.register(models.Target)
+# class TargetAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'user', 'target_name', 'priority', 'target_set_date', 'target_completion_date', 'target_wallet_count']
+#     list_filter = ['user']
+
+#     def target_wallet_count(self, obj):
+#         return obj.target_wallet_count  # This assumes you have annotated it in the queryset
+
+#     target_wallet_count.short_description = 'Target Wallet Count'  # Custom column name
+
+#     def user(self, obj):
+#         return obj.user.username if obj.user else ''
+
+# @admin.register(models.TargetWallet)
+# class TargetWalletAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'user', 'target', 'added_date', 'total_amount']
+#     list_filter = ['target']
+
+#     def target(self, obj):
+#         return obj.target.target_name if obj.target else ''
+
+#     def user(self, obj):
+#         return obj.target.user.username if obj.target and obj.target.user else ''
+    
+# @admin.register(models.TargetWallet)
+# class TargetWalletAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'added_date', 'total_amount']
+#     search_fields = ['id'] 
+
+# @admin.register(models.Target)
+# class TargetAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'target_name', 'priority', 'target_set_date', 'target_completion_date', 'amount_needed', 'user']
+#     search_fields = ['id', 'target_name', 'user__username']  
+#     list_filter = ['priority', 'user']
+
+#     def target_wallet_total_amount(self, obj):
+#         return obj.target_wallet.total_amount if obj.target_wallet else None
+
+#     target_wallet_total_amount.short_description = 'Target Wallet Total Amount' 
+
+#     def user_username(self, obj):
+#         return obj.user.username if obj.user else None
+
+#     user_username.short_description = 'User' 
+    
+
 @admin.register(models.Target)
-class TargetAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'target_name', 'target_set_date', 'target_completion_date', 'target_wallet_list']
+class UserAdmin(admin.ModelAdmin):
+    list_display = ['user', 'target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority']
     list_filter = ['user']
-
-    def target_wallet_list(self, target):
-        url = reverse('admin:core_target_wallet_changelist') + '?' + urlencode({'target__id': str(target.id)})
-        return format_html('<a href="{}">{}</a>', url, target.targetwallet_count)  # Display with link
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            targetwallet_count=Count('target_wallets', distinct=True)
-        )
 
     def user(self, obj):
         return obj.user.username if obj.user else ''
 
+
 @admin.register(models.TargetWallet)
-class TargetWalletAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'target', 'added_date', 'total_amount']
-    list_filter = ['target']
-
-    def target(self, obj):
-        return obj.target.target_name if obj.target else ''
-
-    def user(self, obj):
-        return obj.target.user.username if obj.target and obj.target.user else ''
+class UserAdmin(admin.ModelAdmin):
+    list_display = ['user', 'amount']
+    list_filter = ['user']
+    
+    def user(self,obj):
+        return obj.target.user.username if obj.target.user else ''
