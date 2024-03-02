@@ -32,7 +32,11 @@ urlpatterns = [
 
     path('history/', views.HistoryView.as_view()),
     path('history/<int:entry_id>/', views.HistoryView.as_view(), name='history-detail'),
-    
+
+    path('targetwalletcreate/', views.TargetWalletCreateView.as_view()),
+    path('targetwallet/<str:index>/', views.TargetWalletDetailView.as_view()),
+
     path('targets/', views.TargetListView.as_view()),
     path('targets/<int:pk>', views.TargetDetailView.as_view()),
+
 ]

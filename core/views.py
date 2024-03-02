@@ -61,7 +61,6 @@ class IncomeView(ListCreateAPIView, DestroyAPIView):
         return Income.objects.filter(user_id=self.request.user.id)
     
     def get_serializer_class(self):
-        # print("VIEW")
         return IncomeSerializer
     
     def get_serializer_context(self):
@@ -120,7 +119,6 @@ class ExpenseView(ListCreateAPIView, DestroyAPIView):
         return Expense.objects.filter(user_id=self.request.user.id)
 
     def get_serializer_class(self):
-        # print("VIEW")
         return ExpenseSerializer
 
     def get_serializer_context(self):
@@ -315,14 +313,18 @@ class BalanceView(APIView):
         total_expense = Expense.objects.filter(user_id=self.request.user.id).aggregate(total_expense=Sum('expense_amount'))['total_expense'] or 0
         total_liability = Liability.objects.filter(user_id=self.request.user.id).aggregate(total_liability=Sum('liability_amount'))['total_liability'] or 0
         total_asset = Asset.objects.filter(user_id=self.request.user.id).aggregate(total_asset=Sum('asset_amount'))['total_asset'] or 0
-        balance_amount = total_income - total_expense
+        target_wallet_amount = TargetWallet.objects.filter(user_id=self.request.user.id).first()
+        target_wallet_amount = target_wallet_amount.amount + balance_amount if target_wallet_amount else balance_amount
 
+        balance_amount = total_income - total_expense
+        
         return Response({
             "total_income": total_income,
             "total_expense": total_expense,
             "balance_amount": balance_amount,
             "total_assets": total_asset,
             "total_liabilities": total_liability,
+            "target_wallet_amount": target_wallet_amount,
         })
 
 ############################################################################################################
@@ -435,7 +437,13 @@ class TargetWalletCreateView(ListCreateAPIView):
     def get_serializer_class(self):
         return TargetWalletSerializer
 
-
+    def get_serializer_context(self):
+        return {'user_id':self.request.user.id}
+    
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        return super().create(request, *args, **kwargs)
+    
 
 class TargetWalletDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -502,7 +510,12 @@ class TargetListView(ListCreateAPIView):
     def get_serializer_class(self):
         return TargetSerializer
 
-
+    def get_serializer_context(self):
+        return {'user_id':self.request.user.id}
+    
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        return super().create(request, *args, **kwargs)
 
 class TargetDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -514,3 +527,9 @@ class TargetDetailView(RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         return TargetSerializer
     
+    def get_serializer_context(self):
+        return {'user_id':self.request.user.id}
+    
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        return super().create(request, *args, **kwargs)

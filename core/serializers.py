@@ -106,10 +106,8 @@ class LiabilitySerializer(serializers.ModelSerializer):
 
 
     def create(self,validated_data):
-        # print('here')
         user_id = self.context.get('user_id')
         validated_data['user_id'] = user_id
-        # print(validated_data)
         Liability_instance  =Liability.objects.create(**validated_data)
         print(Liability_instance )
         return Liability_instance 
@@ -117,14 +115,28 @@ class LiabilitySerializer(serializers.ModelSerializer):
 
 ################################################################################################################
 class TargetWalletSerializer(serializers.ModelSerializer):
-    user_id = user_id = serializers.IntegerField()
+    user_id = user_id = serializers.IntegerField(read_only = True)
     class Meta:
         model = TargetWallet
         fields = ['id', 'amount', 'user_id']
 
+    def create(self,validated_data):
+        user_id = self.context.get('user_id')
+        validated_data['user_id'] = user_id
+        TargetWallet_instance  =TargetWallet.objects.create(**validated_data)
+        print(TargetWallet_instance )
+        return TargetWallet_instance 
+
 
 class TargetSerializer(serializers.ModelSerializer):
-    user_id = user_id = serializers.IntegerField()
+    user_id = user_id = serializers.IntegerField(read_only = True)
     class Meta:
         model = Target
-        fields = ['id', 'target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority', 'user_id']
+        fields = ['id', 'user_id','target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority']
+
+    def create(self,validated_data):
+        user_id = self.context.get('user_id')
+        validated_data['user_id'] = user_id
+        Target_instance  =Target.objects.create(**validated_data)
+        print(Target_instance )
+        return Target_instance 
