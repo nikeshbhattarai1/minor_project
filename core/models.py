@@ -89,24 +89,25 @@ class Liability(models.Model):
 #     target = models.ForeignKey(Target, on_delete = models.CASCADE)
 
 #########################################################################################################################
+    
 class Target(models.Model):
     target_name = models.CharField(max_length = 255)
-    current_amount = models.FloatField()
-    target_amount = models.FloatField()
-    target_add_date = models.DateTimeField(auto_now = True)
-    target_deadline = models.DateTimeField(auto_now = False)
-    completed = 'COMP'
-    incomplete = 'INCP'
+    current_amount = models.DecimalField(max_digits = 14, decimal_places = 2, validators = [MinValueValidator(0)])
+    target_amount = models.DecimalField(max_digits = 14, decimal_places = 2, validators = [MinValueValidator(0)])
+    target_add_date = models.DateField(auto_now = False)
+    target_deadline = models.DateField(auto_now = False)
+    completed = 'COMPLETE'
+    incomplete = 'INCOMPLETE'
     target_choices = [(completed, 'completed'),
                       (incomplete, 'incomplete')]
-    target_status  = models.CharField(max_length =4, choices = target_choices, default = incomplete)
-    low = 'L'
-    medium = 'M'
-    high = 'H'
+    target_status  = models.CharField(max_length =12, choices = target_choices, default = incomplete)
+    low = 'LOW'
+    medium = 'MEDIUM'
+    high = 'HIGH'
     priority_choices = [(low, 'low'),
                       (medium, 'medium'),
                       (high, 'high')]
-    target_priority = models.CharField(max_length = 1, choices = priority_choices)
+    target_priority = models.CharField(max_length = 12, choices = priority_choices)
     user = models.ForeignKey(User, on_delete = models.CASCADE)
 
     def __str__(self):
@@ -114,5 +115,5 @@ class Target(models.Model):
 
 
 class TargetWallet(models.Model):
-    amount = models.FloatField()
+    amount = models.DecimalField(max_digits = 14, decimal_places = 2, validators = [MinValueValidator(0)])
     user = models.OneToOneField(User, on_delete = models.CASCADE)

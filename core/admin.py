@@ -182,7 +182,7 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(models.Target)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['user', 'target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority']
+    list_display = ['id','user', 'target_name', 'current_amount', 'target_amount', 'target_add_date', 'target_deadline', 'target_status', 'target_priority']
     list_filter = ['user']
 
     def user(self, obj):

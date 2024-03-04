@@ -16,6 +16,7 @@ from django.db.models import Sum
 from django.db import transaction
 from django.core.serializers import serialize
 from . import models
+from django.utils import timezone
 from datetime import datetime, date
 
 from django.http import JsonResponse
@@ -313,18 +314,22 @@ class BalanceView(APIView):
         total_expense = Expense.objects.filter(user_id=self.request.user.id).aggregate(total_expense=Sum('expense_amount'))['total_expense'] or 0
         total_liability = Liability.objects.filter(user_id=self.request.user.id).aggregate(total_liability=Sum('liability_amount'))['total_liability'] or 0
         total_asset = Asset.objects.filter(user_id=self.request.user.id).aggregate(total_asset=Sum('asset_amount'))['total_asset'] or 0
-        target_wallet_amount = TargetWallet.objects.filter(user_id=self.request.user.id).first()
-        target_wallet_amount = target_wallet_amount.amount + balance_amount if target_wallet_amount else balance_amount
 
         balance_amount = total_income - total_expense
+
+        target_wallet_amount = TargetWallet.objects.filter(user=request.user).first()
+        target_wallet_balance = target_wallet_amount.amount if target_wallet_amount else Decimal(0)
         
+        net_balance_amount = total_income - total_expense - Decimal(target_wallet_balance)
+
         return Response({
             "total_income": total_income,
             "total_expense": total_expense,
             "balance_amount": balance_amount,
             "total_assets": total_asset,
             "total_liabilities": total_liability,
-            "target_wallet_amount": target_wallet_amount,
+            "target_wallet_balance": target_wallet_balance,
+            "net_balance_amount": net_balance_amount,
         })
 
 ############################################################################################################
@@ -463,26 +468,26 @@ class TargetWalletDetailView(APIView):
 
     def function_start(self, user):
         target_wallet_queryset = TargetWallet.objects.get(user_id=user.id)
-        total_wallet = target_wallet_queryset.amount
-        targets = Target.objects.filter(user_id=user.id).filter(target_status='INCP').filter(target_deadline__gt=date.today())
+        total_wallet = target_wallet_queryset.amount                                               
+        targets = Target.objects.filter(user_id=user.id).filter(target_status='INCOMPLETE').filter(target_deadline__gt=timezone.now().date()) #date.today()
         
-        total_priority = 0
+        total_priority = Decimal(0)
         for target in targets:
-            if target.target_priority == "H":
-                total_priority += 0.5
-            elif target.target_priority == "M":
-                total_priority += 0.3
+            if target.target_priority == "HIGH":
+                total_priority += Decimal('0.5')
+            elif target.target_priority == "MEDIUM":
+                total_priority += Decimal('0.3')
             else:
-                total_priority += 0.2
+                total_priority += Decimal('0.2')
 
         for target in targets:
-            float_target_priority = 0
-            if target.target_priority == "H":
-                float_target_priority = 0.5
-            elif target.target_priority == "M":
-                float_target_priority = 0.3
+            float_target_priority = Decimal(0)
+            if target.target_priority == "HIGH":
+                float_target_priority = Decimal('0.5')
+            elif target.target_priority == "MEDIUM":
+                float_target_priority = Decimal('0.3')
             else:
-                float_target_priority = 0.2
+                float_target_priority = Decimal('0.2')
             target_divided_amount = (total_wallet / total_priority) * float_target_priority
 
             if target.target_amount > target_divided_amount:
@@ -491,15 +496,13 @@ class TargetWalletDetailView(APIView):
             
             else:
                 target.current_amount = target.target_amount
-                target.target_status = "COMP"
+                target.target_status = "COMPLETE"
                 target_wallet_queryset.amount -= target.target_amount
                 target.save()
                 target_wallet_queryset.save()
                 # Recursion
                 self.function_start(user)
                 break
-    
-
 
 class TargetListView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -533,3 +536,6 @@ class TargetDetailView(RetrieveUpdateDestroyAPIView):
     def create(self, request, *args, **kwargs):
         print(request.data)
         return super().create(request, *args, **kwargs)
+    
+
+
