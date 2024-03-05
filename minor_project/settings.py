@@ -26,8 +26,8 @@ SECRET_KEY = 'django-insecure-0j_41c4)7m58gz@7i8#gkyf!d0o5sn3_^bj^v!^h!d&3*#s7ve
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.vercel.app','.now.sh','localhost','127.0.0.1']
-# ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['.vercel.app','.now.sh','localhost','127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -96,12 +96,12 @@ DATABASES = {
         'PASSWORD': '123',
         'HOST':'localhost',
         'PORT':'3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
     },
 }
 
+        # 'OPTIONS': {
+        #     'charset': 'utf8mb4',
+        # },
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -167,10 +167,3 @@ SIMPLE_JWT = {
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
-
-
-
-# import os 
-# STATIC_URL = 'static/'
-# STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
