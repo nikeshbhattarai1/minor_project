@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-0j_41c4)7m58gz@7i8#gkyf!d0o5sn3_^bj^v!^h!d&3*#s7ve
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.vercel.app']
+ALLOWED_HOSTS = ['.vercel.app','.now.sh','localhost','127.0.0.1']
 # ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -170,3 +170,7 @@ INTERNAL_IPS = [
 
 
 
+import os 
+STATIC_URL = 'static/'
+STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
